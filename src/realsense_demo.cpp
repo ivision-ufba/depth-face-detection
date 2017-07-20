@@ -3,6 +3,8 @@
 #include "face_detector.hpp"
 #include "realsense.hpp"
 
+/* Straighforward RealSense demonstration */
+
 int main() {
   RealSense rs;
   FaceDetector detector;
