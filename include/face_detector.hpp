@@ -16,10 +16,10 @@ class FaceDetector {
   FaceDetector(FaceDetector &&) = delete;
   FaceDetector &operator=(const FaceDetector &) = delete;
 
-  std::vector<cv::Point3d> detect_frontal(const cv::Mat &, const Calibration &);
-  std::vector<cv::Point3d> range_detect(const cv::Mat &, const Calibration &,
-                                        const int, const int, const int,
-                                        const int, const int, const int);
+  std::vector<cv::Rect> detect_frontal(const cv::Mat &, const Calibration &);
+  std::vector<cv::Rect> range_detect(const cv::Mat &, const Calibration &,
+                                     const int, const int, const int, const int,
+                                     const int, const int);
 
  private:
   const float resolution;
@@ -34,6 +34,9 @@ class FaceDetector {
                                const double, const double) const;
   void compute_projection(const std::vector<cv::Point3d> &,
                           double rotation_matrix[3][3]);
+  cv::Rect project(const cv::Point3d &, const Calibration &) const;
+  std::vector<cv::Rect> project_and_merge(const std::vector<cv::Point3d> &,
+                                          const Calibration &) const;
   void fill_holes();
   std::vector<cv::Point3d> grid_sample(const cv::Mat &, const Calibration &,
                                        const double, const unsigned int) const;

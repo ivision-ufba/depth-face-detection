@@ -19,7 +19,7 @@ FaceDetector::FaceDetector()
       step(STEP),
       threshold(THRESHOLD) {
   // open haar cascade
-  face_cascade = (CvHaarClassifierCascade *)cvLoad(PATH_CASCADE_FACE, 0, 0, 0);
+  face_cascade = (CvHaarClassifierCascade*)cvLoad(PATH_CASCADE_FACE, 0, 0, 0);
   if (!face_cascade) throw std::runtime_error("Error: unable to find cascade");
 
   // allocate images
@@ -56,7 +56,7 @@ FaceDetector::~FaceDetector() {
   cvReleaseHaarClassifierCascade(&face_cascade);
 }
 
-void FaceDetector::compute_projection(const std::vector<cv::Point3d> &points,
+void FaceDetector::compute_projection(const std::vector<cv::Point3d>& points,
                                       double rotation_matrix[3][3]) {
   /* computes a projection in 'projection' of the 3D points in 'points' after
    * rotating them by 'rotation_matrix'.
@@ -65,7 +65,7 @@ void FaceDetector::compute_projection(const std::vector<cv::Point3d> &points,
 
   cvSet(mark, cvRealScalar(0));
 
-  for (const cv::Point3d &point : points) {
+  for (const cv::Point3d& point : points) {
     // compute rotated coordinates
     const unsigned int x = CX + cvRound(point.x * rotation_matrix[0][0] +
                                         point.y * rotation_matrix[0][1] +
@@ -160,7 +160,7 @@ void FaceDetector::fill_holes() {
 }
 
 std::vector<cv::Point3d> FaceDetector::grid_sample(
-    const cv::Mat &depth_img, const Calibration &calibration,
+    const cv::Mat& depth_img, const Calibration& calibration,
     const double threshold, const unsigned int step) const {
   /* generates a point cloud from a grid sample of a depth image.
    * - 'depth_img': depth image to be sampled;
@@ -213,6 +213,7 @@ void FaceDetector::compute_rotation_matrix(double rotation_matrix[3][3],
    * - 'x_angle': given angle for the x axis;
    * - 'y_angle': given angle for the y axis;
    * - 'z_angle': given angle for the z axis; */
+
   const double cos_x = cos(x_angle);
   const double cos_y = cos(y_angle);
   const double cos_z = cos(z_angle);
@@ -232,9 +233,9 @@ void FaceDetector::compute_rotation_matrix(double rotation_matrix[3][3],
 }
 
 std::vector<cv::Point3d> FaceDetector::helper(
-    const std::vector<cv::Point3d> &points, const double x_angle,
+    const std::vector<cv::Point3d>& points, const double x_angle,
     const double y_angle, const double z_angle) {
-  /* detect faces in projection image after rotation.
+  /* detects faces in projection image after rotation.
    * - 'points': cloud point to be projected;
    * - 'x_angle': x rotation angle;
    * - 'y_angle': y rotation angle;
@@ -295,8 +296,48 @@ std::vector<cv::Point3d> FaceDetector::helper(
   return detections;
 }
 
-std::vector<cv::Point3d> FaceDetector::range_detect(
-    const cv::Mat &depth_img, const Calibration &calibration,
+cv::Rect FaceDetector::project(const cv::Point3d& detection_point,
+                               const Calibration& calibration) const {
+  /* projects a detection point into a rectangle.
+   * - 'detection_point': 3D coordinates of point;
+   * - returns: projected rectangle of detection. */
+
+  const cv::Point detection_br =
+      calibration.xyz_to_depth(detection_point + cv::Point3d(105, 105, 0));
+  const cv::Point detection_tl =
+      calibration.xyz_to_depth(detection_point - cv::Point3d(105, 105, 0));
+
+  return cv::Rect(detection_tl, detection_br);
+}
+
+std::vector<cv::Rect> FaceDetector::project_and_merge(
+    const std::vector<cv::Point3d>& detection_points,
+    const Calibration& calibration) const {
+  /* projects detections into depth image and merges multiple detections.
+   * - 'detection_points': detections in 3D points;
+   * - returns: merged and projected detections as rectangles. */
+
+  std::vector<cv::Rect> merged_detections;
+  for (const cv::Point3d& detection_point : detection_points) {
+    const cv::Point detection_pixel = calibration.xyz_to_depth(detection_point);
+
+    // if point projects into previously projected detection, merge
+    bool to_merge = false;
+    for (const cv::Rect& detection : merged_detections)
+      if (detection.contains(detection_pixel)) {
+        to_merge = true;
+        break;
+      }
+
+    if (!to_merge)
+      merged_detections.push_back(project(detection_point, calibration));
+  }
+
+  return merged_detections;
+}
+
+std::vector<cv::Rect> FaceDetector::range_detect(
+    const cv::Mat& depth_img, const Calibration& calibration,
     const int min_x_angle, const int min_y_angle, const int min_z_angle,
     const int max_x_angle, const int max_y_angle, const int max_z_angle) {
   /* detects faces in intensity depth image in angle ranges.
@@ -309,6 +350,7 @@ std::vector<cv::Point3d> FaceDetector::range_detect(
    * - 'max_y_angle': y angle interval upper bound;
    * - 'max_z_angle': z angle interval upper bound;
    * - returns: 3D point coordinates of face detections. */
+
   std::vector<cv::Point3d> points =
       grid_sample(depth_img, calibration, threshold, step);
 
@@ -323,23 +365,18 @@ std::vector<cv::Point3d> FaceDetector::range_detect(
                             new_detections.end());
         }
 
-  // todo: merge detections
-  // todo: convert detections to rect
-
-  return detections;
+  return project_and_merge(detections, calibration);
 }
 
-std::vector<cv::Point3d> FaceDetector::detect_frontal(
-    const cv::Mat &depth_img, const Calibration &calibration) {
+std::vector<cv::Rect> FaceDetector::detect_frontal(
+    const cv::Mat& depth_img, const Calibration& calibration) {
   /* detects frontal faces in intesity depth image.
    * - 'depth_img': depth intensity image;
    * - 'calibration': calibration interface;
    * - returns: 3D point coordinates of face detections. */
+
   std::vector<cv::Point3d> points =
       grid_sample(depth_img, calibration, threshold, step);
 
-  // todo: merge detections
-  // todo: convert detections to rect
-
-  return helper(points, 0, 0, 0);
+  return project_and_merge(helper(points, 0, 0, 0), calibration);
 }
