@@ -8,6 +8,8 @@
 
 #include "calibration.hpp"
 
+/* Main face detection class */
+
 class FaceDetector {
  public:
   FaceDetector();

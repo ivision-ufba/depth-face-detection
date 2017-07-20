@@ -9,6 +9,8 @@
 
 #include <librealsense/rs.hpp>
 
+/* Implementation example for Intel RealSense camera */
+
 class RealSenseCalibration : public Calibration {
  public:
   RealSenseCalibration() = default;
