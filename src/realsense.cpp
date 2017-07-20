@@ -1,6 +1,4 @@
 #include "realsense.hpp"
-#include <iostream>
-using namespace std;
 
 RealSense::RealSense() {
   if (context.get_device_count() == 0)
@@ -20,11 +18,11 @@ RealSense::RealSense() {
 
 void RealSense::get_images() {
   dev->wait_for_frames();
-  void *depth_frame = (void *)dev->get_frame_data(rs::stream::depth);
+  void* depth_frame = (void*)dev->get_frame_data(rs::stream::depth);
   depth = cv::Mat(480, 640, CV_16U, depth_frame);
 }
 
-void RealSenseCalibration::calibrate(const rs::intrinsics &depth_intrinsics,
+void RealSenseCalibration::calibrate(const rs::intrinsics& depth_intrinsics,
                                      const float scale) {
   this->depth_intrinsics = depth_intrinsics;
   this->scale = scale;
@@ -37,7 +35,7 @@ cv::Point3d RealSenseCalibration::depth_to_xyz(const float x, const float y,
                      -rs_point.z * 1000.0);
 }
 
-cv::Point RealSenseCalibration::xyz_to_depth(const cv::Point3d &point) const {
+cv::Point RealSenseCalibration::xyz_to_depth(const cv::Point3d& point) const {
   cv::Point p;
   p.x = -(point.x * depth_intrinsics.fx) / point.z + depth_intrinsics.ppx;
   p.y = (point.y * depth_intrinsics.fy) / point.z + depth_intrinsics.ppy;
