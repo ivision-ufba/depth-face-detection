@@ -6,7 +6,7 @@
 #define HEIGHT 1600
 #define FACE_SIZE 21
 #define PATH_CASCADE_FACE "misc/ALL_Spring2003_3D.xml"
-#define THRESHOLD 1200
+#define THRESHOLD 2000
 #define STEP 6
 
 FaceDetector::FaceDetector()
