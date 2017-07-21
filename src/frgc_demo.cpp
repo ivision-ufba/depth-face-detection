@@ -3,9 +3,10 @@
 #include "abs.hpp"
 #include "face_detector.hpp"
 
-/* Demonstration of frontal depth face detection for a
+/* Demonstration of depth face detection for a
  * Face Recognition Grand Challenge (FRGC) cloud point
- * input in .abs format */
+ * input in .abs format. It detects faces in rotation
+ * intervals [0, 30] x [-20, 20] x [0, 0] degrees. */
 
 int main(const int argc, char** const argv) {
   if (argc <= 1)
@@ -22,7 +23,8 @@ int main(const int argc, char** const argv) {
 
   // detect faces
   FaceDetector detector;
-  auto dets = detector.detect_frontal(depth_img, calibration);
+  auto dets =
+      detector.range_detect(depth_img, calibration, 0, -20, 0, 30, 20, 0);
 
   // draw detection
   cv::normalize(depth_img, depth_img, 0, 1, cv::NORM_MINMAX);
