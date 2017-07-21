@@ -15,13 +15,13 @@ class RealSenseCalibration : public Calibration {
  public:
   RealSenseCalibration() = default;
   ~RealSenseCalibration() = default;
-  RealSenseCalibration(const RealSenseCalibration &) = delete;
-  RealSenseCalibration(RealSenseCalibration &&) = delete;
-  RealSenseCalibration &operator=(const RealSenseCalibration &) = delete;
+  RealSenseCalibration(const RealSenseCalibration&) = delete;
+  RealSenseCalibration(RealSenseCalibration&&) = delete;
+  RealSenseCalibration& operator=(const RealSenseCalibration&) = delete;
 
   cv::Point3d depth_to_xyz(const float, const float, const float) const;
-  cv::Point xyz_to_depth(const cv::Point3d &) const;
-  void calibrate(const rs::intrinsics &, const float);
+  cv::Point xyz_to_depth(const cv::Point3d&) const;
+  void calibrate(const rs::intrinsics&, const float);
 
  private:
   rs::intrinsics depth_intrinsics;
@@ -32,9 +32,9 @@ class RealSense {
  public:
   RealSense();
   ~RealSense() = default;
-  RealSense(RealSense &&) = delete;
-  RealSense(const RealSense &) = delete;
-  RealSense &operator=(const RealSense &) = delete;
+  RealSense(RealSense&&) = delete;
+  RealSense(const RealSense&) = delete;
+  RealSense& operator=(const RealSense&) = delete;
 
   RealSenseCalibration calibration;
 
@@ -44,7 +44,7 @@ class RealSense {
 
  private:
   rs::context context;
-  rs::device *dev;
+  rs::device* dev;
 };
 
 #endif

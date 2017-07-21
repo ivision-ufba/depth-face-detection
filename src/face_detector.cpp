@@ -300,41 +300,45 @@ std::vector<cv::Point3d> FaceDetector::helper(
   return detections;
 }
 
-cv::Rect FaceDetector::project(const cv::Point3d& detection_point,
-                               const Calibration& calibration) const {
-  /* projects a detection point into a rectangle.
-   * - 'detection_point': 3D coordinates of point;
-   * - returns: projected rectangle of detection. */
+std::vector<cv::Rect> FaceDetector::project(
+    const std::vector<cv::Point3d>& detections,
+    const Calibration& calibration) const {
+  /* projects a detection points into rectangles.
+   * - 'detections': 3D coordinates of detection points;
+   * - returns: projected detection rectangles. */
 
-  const cv::Point detection_br =
-      calibration.xyz_to_depth(detection_point + cv::Point3d(105, 105, 0));
-  const cv::Point detection_tl =
-      calibration.xyz_to_depth(detection_point - cv::Point3d(105, 105, 0));
+  std::vector<cv::Rect> projected_detections;
 
-  return cv::Rect(detection_tl, detection_br);
+  for (const cv::Point3d& detection : detections) {
+    const cv::Point br =
+        calibration.xyz_to_depth(detection + cv::Point3d(105, 105, 0));
+    const cv::Point tl =
+        calibration.xyz_to_depth(detection - cv::Point3d(105, 105, 0));
+    projected_detections.emplace_back(tl, br);
+  }
+
+  return projected_detections;
 }
 
-std::vector<cv::Rect> FaceDetector::project_and_merge(
-    const std::vector<cv::Point3d>& detection_points,
-    const Calibration& calibration) const {
-  /* projects detections into depth image and merges multiple detections.
-   * - 'detection_points': detections in 3D points;
-   * - returns: merged and projected detections as rectangles. */
+std::vector<cv::Point3d> FaceDetector::merge(
+    const std::vector<cv::Point3d>& detections) const {
+  /* merges multiple detections of the same instance.
+   * - 'detections': 3D points corresponding to detections;
+   * - returns: 3D points of merged detections. */
 
-  std::vector<cv::Rect> merged_detections;
-  for (const cv::Point3d& detection_point : detection_points) {
-    const cv::Point detection_pixel = calibration.xyz_to_depth(detection_point);
-
-    // if point projects into previously projected detection, merge
+  std::vector<cv::Point3d> merged_detections;
+  for (const cv::Point3d& detection : detections) {
     bool to_merge = false;
-    for (const cv::Rect& detection : merged_detections)
-      if (detection.contains(detection_pixel)) {
+
+    // checks if distance to merged detections is below merging threshold
+    for (const cv::Point3d& merged_detection : merged_detections)
+      if (cv::norm(detection - merged_detection) <= 50) {
         to_merge = true;
         break;
       }
 
-    if (!to_merge)
-      merged_detections.push_back(project(detection_point, calibration));
+    // detection is of some instance not yet merged
+    if (!to_merge) merged_detections.push_back(detection);
   }
 
   return merged_detections;
@@ -344,9 +348,33 @@ std::vector<cv::Rect> FaceDetector::range_detect(
     const cv::Mat& depth_img, const Calibration& calibration,
     const int min_x_angle, const int min_y_angle, const int min_z_angle,
     const int max_x_angle, const int max_y_angle, const int max_z_angle) {
-  /* detects faces in intensity depth image in angle ranges.
-   * - 'depth_img': depth intensity image;
+  /* detects faces in intensity depth images in angle ranges.
+   * - 'depth_img': depth intensity image where faces will be detected;
    * - 'calibration': calibration interface;
+   * - 'min_x_angle': x angle interval lower bound;
+   * - 'min_y_angle': y angle interval lower bound;
+   * - 'min_z_angle': z angle interval lower bound;
+   * - 'max_x_angle': x angle interval upper bound;
+   * - 'max_y_angle': y angle interval upper bound;
+   * - 'max_z_angle': z angle interval upper bound;
+   * - returns: Rectangles of face detections. */
+
+  std::vector<cv::Point3d> points =
+      grid_sample(depth_img, calibration, threshold, step);
+
+  std::vector<cv::Point3d> detections =
+      range_detect(points, min_x_angle, min_y_angle, min_z_angle, max_x_angle,
+                   max_y_angle, max_z_angle);
+
+  return project(detections, calibration);
+}
+
+std::vector<cv::Point3d> FaceDetector::range_detect(
+    const std::vector<cv::Point3d>& points, const int min_x_angle,
+    const int min_y_angle, const int min_z_angle, const int max_x_angle,
+    const int max_y_angle, const int max_z_angle) {
+  /* detects faces in 3D point clouds in angle ranges.
+   * - 'points': 3D point cloud where faces will be detected;
    * - 'min_x_angle': x angle interval lower bound;
    * - 'min_y_angle': y angle interval lower bound;
    * - 'min_z_angle': z angle interval lower bound;
@@ -355,32 +383,42 @@ std::vector<cv::Rect> FaceDetector::range_detect(
    * - 'max_z_angle': z angle interval upper bound;
    * - returns: 3D point coordinates of face detections. */
 
-  std::vector<cv::Point3d> points =
-      grid_sample(depth_img, calibration, threshold, step);
-
-  std::vector<cv::Point3d> detections;
+  std::vector<cv::Point3d> all_detections;
   for (int x_angle = min_x_angle; x_angle <= max_x_angle; x_angle += 10)
     for (int y_angle = min_y_angle; y_angle <= max_y_angle; y_angle += 10)
       for (int z_angle = min_z_angle; z_angle <= max_z_angle; z_angle += 10)
         if (x_angle + y_angle + z_angle <= 30) {
-          const std::vector<cv::Point3d> new_detections =
+          // detect for this angle
+          const std::vector<cv::Point3d> detections =
               helper(points, x_angle, y_angle, z_angle);
-          detections.insert(detections.end(), new_detections.begin(),
-                            new_detections.end());
+
+          // join detections of previous angles
+          all_detections.insert(all_detections.end(), detections.begin(),
+                                detections.end());
         }
 
-  return project_and_merge(detections, calibration);
+  return merge(all_detections);
 }
 
 std::vector<cv::Rect> FaceDetector::detect_frontal(
     const cv::Mat& depth_img, const Calibration& calibration) {
-  /* detects frontal faces in intesity depth image.
-   * - 'depth_img': depth intensity image;
+  /* detects frontal faces in intensity depth images.
+   * - 'depth_img': depth intensity image where faces will be detected;
    * - 'calibration': calibration interface;
-   * - returns: 3D point coordinates of face detections. */
+   * - returns: Rectangles of face detections. */
 
   std::vector<cv::Point3d> points =
       grid_sample(depth_img, calibration, threshold, step);
 
-  return project_and_merge(helper(points, 0, 0, 0), calibration);
+  std::vector<cv::Point3d> detections = detect_frontal(points);
+
+  return project(detections, calibration);
+}
+
+std::vector<cv::Point3d> FaceDetector::detect_frontal(
+    const std::vector<cv::Point3d>& points) {
+  /* detects frontal faces in 3D point clouds.
+   * - 'points': 3D point cloud where faces will be detected;
+   * - returns: 3D point coordinates of face detections. */
+  return merge(helper(points, 0, 0, 0));
 }
