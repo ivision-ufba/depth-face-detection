@@ -173,7 +173,7 @@ std::vector<cv::Point3d> FaceDetector::grid_sample(
   for (int i = 0; i < depth_img.rows; i += step)
     for (int j = 0; j < depth_img.cols; j += step) {
       const cv::Point3d point =
-          calibration.depth_to_xyz(j, i, depth_img.at<unsigned short>(i, j));
+          calibration.depth_to_xyz(j, i, depth_img.at<float>(i, j));
 
       if (point.z < -1.0 && point.z > -threshold)
         points.push_back(resolution * point);
@@ -337,7 +337,7 @@ std::vector<cv::Rect> FaceDetector::project_and_merge(
 }
 
 std::vector<cv::Rect> FaceDetector::range_detect(
-    const cv::Mat& depth_img, const Calibration& calibration,
+    const cv::Mat& _depth_img, const Calibration& calibration,
     const int min_x_angle, const int min_y_angle, const int min_z_angle,
     const int max_x_angle, const int max_y_angle, const int max_z_angle) {
   /* detects faces in intensity depth image in angle ranges.
@@ -350,6 +350,10 @@ std::vector<cv::Rect> FaceDetector::range_detect(
    * - 'max_y_angle': y angle interval upper bound;
    * - 'max_z_angle': z angle interval upper bound;
    * - returns: 3D point coordinates of face detections. */
+
+  // convert depth image to float for compatibility
+  cv::Mat depth_img;
+  _depth_img.convertTo(depth_img, CV_32F);
 
   std::vector<cv::Point3d> points =
       grid_sample(depth_img, calibration, threshold, step);
@@ -369,11 +373,15 @@ std::vector<cv::Rect> FaceDetector::range_detect(
 }
 
 std::vector<cv::Rect> FaceDetector::detect_frontal(
-    const cv::Mat& depth_img, const Calibration& calibration) {
+    const cv::Mat& _depth_img, const Calibration& calibration) {
   /* detects frontal faces in intesity depth image.
    * - 'depth_img': depth intensity image;
    * - 'calibration': calibration interface;
    * - returns: 3D point coordinates of face detections. */
+
+  // convert depth image to float for compatibility
+  cv::Mat depth_img;
+  _depth_img.convertTo(depth_img, CV_32F);
 
   std::vector<cv::Point3d> points =
       grid_sample(depth_img, calibration, threshold, step);
