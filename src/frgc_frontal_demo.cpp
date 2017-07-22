@@ -4,7 +4,7 @@
 #include "face_detector.hpp"
 
 /* Demonstration of frontal depth face detection for a
- * Face Recognition Grand Challenge (FRGC) cloud point
+ * Face Recognition Grand Challenge (FRGC) point cloud
  * input in .abs format */
 
 int main(const int argc, char** const argv) {

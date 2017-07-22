@@ -4,7 +4,7 @@
 #include "face_detector.hpp"
 
 /* Demonstration of depth face detection for a
- * Face Recognition Grand Challenge (FRGC) cloud point
+ * Face Recognition Grand Challenge (FRGC) point cloud
  * input in .abs format. It detects faces in rotation
  * intervals [0, 30] x [-20, 20] x [0, 0] degrees. */
 
