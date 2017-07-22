@@ -47,5 +47,6 @@ If you find the code in this repository useful in your research, please consider
 }
 ```
 
-## Troubleshooting
-Questions and problems can be reported as issues in this repository. We would be glad to answer them.
+
+## Documentation and Troubleshooting
+While the code is still not fully documented, there are comments in each method relevant to the implementation detailing its purpose, parameters and return value. Questions and problems can be reported as issues in this repository. We would be glad to answer them.
