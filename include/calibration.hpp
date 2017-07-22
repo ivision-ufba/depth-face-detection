@@ -4,7 +4,7 @@
 #include <opencv2/core.hpp>
 
 /* Calibration interface must implement both functions.
- * 3D coordinates are always in meters */
+ * 3D coordinates are always in milimeters */
 
 class Calibration {
  public:

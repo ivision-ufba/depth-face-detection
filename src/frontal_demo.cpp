@@ -9,6 +9,7 @@ int main(const int argc, char** const argv) {
   std::vector<cv::Point3d> points;
 
   // read point cloud into points
+  // coordinates must be in milimeters
 
   // detect faces
   FaceDetector detector;

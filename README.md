@@ -23,7 +23,7 @@ Or the .abs compatible (FRGC's chosen format) ones:
   * `make frgc`
 
 ## Usage
-The point cloud demonstrations assume that the `point_cloud_demo.cpp` (or `point_cloud_frontal_demo.cpp`) will be modified so that a point cloud in format `std::vector<cv::Point3d>` will be read in `points` prior to calling the methods. The generated executable are called `demo.out` and `frontal_demo.out`
+The point cloud demonstrations assume that the `point_cloud_demo.cpp` (or `point_cloud_frontal_demo.cpp`) will be modified so that a point cloud in format `std::vector<cv::Point3d>` will be read in `points` prior to calling the methods. The generated executable are called `demo.out` and `frontal_demo.out`. Coordinates must be in milimeters throughout the code.
 
 ### FRGC
 FRGC's compatible demos are run by:
