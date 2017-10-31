@@ -12,7 +12,7 @@ It achieves a high degree of pose invariance by detecting frontal faces not only
 * [Optional] [librealsense](https://github.com/IntelRealSense/librealsense). Only necessary to run the demonstrations using the Intel® RealSense™ acquisition devices.
 
 ## Installing the demonstrations
-We only tested it with Ubuntu 16.04, but any other Linux distribution should de fine.
+We only tested it with Ubuntu 16.04, but any other Linux distribution should be fine.
 To compile the point cloud demos:
   * `mkdir build && make`
 
