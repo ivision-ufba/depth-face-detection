@@ -30,7 +30,10 @@ FRGC's compatible demos are run by:
 * `./frgc_demo.out $path_to_abs_file`
 * `./frgc_frontal_demo.out $path_to_abs_file`
 
-The detected face will be shown and marked in a blue rectangle.
+The detected face will be shown and marked in a blue rectangle. For example, you can use the `abs` file in the `samples` folder:
+```bash
+./frgc_demo.out samples/face.abs
+```
 
 ### Intel® RealSense™
 Intel® RealSense™ demos require only running the executable `./realsense_demo.out` or `./realsense_frontal_demo.out`.
